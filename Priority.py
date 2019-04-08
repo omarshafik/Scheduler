@@ -49,7 +49,7 @@ def priority_nonpreemptive(proccess_list):
     running = False     # running proccess
     occupied_slots = []
     time = 0
-    while p_arrival or ready_queue or running:
+    while time < Proccess.total_time:
         while p_arrival and p_arrival[0].arrival_t <= time:
             ready_queue.append(p_arrival[0])
             del p_arrival[0]
@@ -77,7 +77,7 @@ def priority_nonpreemptive(proccess_list):
     return occupied_slots
 
 
-p = priority_nonpreemptive({Proccess(0, 5, "U1", 5), Proccess(
+p = priority_preemptive({Proccess(0, 5, "U1", 5), Proccess(
     2, 4, "U2", 3), Proccess(5, 5, "U3", 1), Proccess(5, 1, "U4", 2)})
 
 print(p)
