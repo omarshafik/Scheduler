@@ -127,7 +127,9 @@ class Ui_OutputWindow(object):
             name = str(self.ProccessTable.item(row, 0).text())
             arrival_time = int(self.ProccessTable.item(row, 1).text())
             duration = int(self.ProccessTable.item(row, 2).text())
-            priority = int(self.ProccessTable.item(row, 3).text())
+            priority = 1
+            if(alg == "Priority"):
+                priority = int(self.ProccessTable.item(row, 3).text())
             if name and arrival_time >= 0 and duration > 0 and priority >= 0:
                 pro_list.append(
                     Proccess(arrival_time, duration, name, priority))
