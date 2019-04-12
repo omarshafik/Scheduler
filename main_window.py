@@ -1,3 +1,4 @@
+import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from new_output_window import Ui_OutputWindow
 
