@@ -14,6 +14,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
 from Scheduler import Scheduler
 from proccessClass import Proccess
+from copy import deepcopy
 
 # proccess_list = {Proccess(0, 5, "U1", 5), Proccess(
 #     2, 4, "U2", 3), Proccess(5, 5, "U3", 1), Proccess(5, 1, "U4", 2)}
@@ -74,8 +75,6 @@ class Ui_OutputWindow(object):
             item = QtWidgets.QTableWidgetItem()
             self.ProccessTable.setVerticalHeaderItem(i, item)
             i = i + 1
-        #item = QtWidgets.QTableWidgetItem()
-        #self.ProccessTable.setVerticalHeaderItem(1, item)
         item = QtWidgets.QTableWidgetItem()
         self.ProccessTable.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -98,6 +97,22 @@ class Ui_OutputWindow(object):
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
 
         self.ShowHideBtn.setObjectName("ShowHideBtn")
+
+
+        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(140, 380, 400, 25))
+        font = QtGui.QFont()
+        font.setPointSize(15)
+        font.setItalic(False)
+        self.label.setFont(font)
+        self.label.setObjectName("label")
+
+        self.label2 = QtWidgets.QLabel(self.centralwidget)
+        self.label2.setGeometry(QtCore.QRect(140, 425, 400, 25))
+        self.label2.setFont(font)
+        self.label2.setObjectName("label2")
+
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 800, 22))
@@ -110,6 +125,8 @@ class Ui_OutputWindow(object):
         self.retranslateUi(MainWindow, x)
 
         self.Gantt.hide()
+        self.label.hide()
+        self.label2.hide()
         self.ShowHideBtn.accepted.connect(self.SetGantt)
         self.ShowHideBtn.rejected.connect(self.ResetGantt)
 
@@ -133,7 +150,8 @@ class Ui_OutputWindow(object):
             if name and arrival_time >= 0 and duration > 0 and priority >= 0:
                 pro_list.append(
                     Proccess(arrival_time, duration, name, priority))
-
+        processes = []
+        processes = deepcopy(pro_list)
         if alg == "Priority" and prefs["preemptive"]:
             out = Scheduler().priority_preemptive(pro_list)
         elif alg == "Priority" and not prefs["preemptive"]:
@@ -155,18 +173,23 @@ class Ui_OutputWindow(object):
             duration += 1
             prev_tSlot = tSlot
         out_list.append({"Name": prev_tSlot, "duration": duration})
-        return out, out_list
+        return out, out_list , processes
 
     def ResetGantt(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.AllEditTriggers)
         self.Gantt.clear()
         self.Gantt.hide()
+        self.label.hide()
+        self.label2.hide()
 
     def SetGantt(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
-        output, output_list = self.ReadProccessTable()
+        output, output_list, pro_list = self.ReadProccessTable()
+        avg_TAT = 0
+        avg_WT = 0
+        avg_TAT, avg_WT= Scheduler().average_TAT_WT(output, pro_list)
         self.Gantt.setColumnCount(len(output_list))
         self.Gantt.setRowCount(2)
         ganttWidth = self.Gantt.width()
@@ -183,6 +206,11 @@ class Ui_OutputWindow(object):
             self.Gantt.setItem(0, i, QTableWidgetItem(item["Name"]))
             self.Gantt.setItem(1, i, QTableWidgetItem(str(item["duration"])))
             i += 1
+        _translate = QtCore.QCoreApplication.translate
+        self.label.setText(_translate("MainWindow", " average waiting time = " + str(avg_WT)))
+        self.label2.setText(_translate("MainWindow", " average turn around time = " + str(avg_TAT)))
+        self.label.show()
+        self.label2.show()
         self.Gantt.show()
 
     def retranslateUi(self, MainWindow, dict):
@@ -194,8 +222,6 @@ class Ui_OutputWindow(object):
             item.setText(_translate("MainWindow", "P"+str(i)))
             self.ProccessTable.setRowHeight(i, 25)
             i = i + 1
-        #item = self.ProccessTable.verticalHeaderItem(1)
-        #item.setText(_translate("MainWindow", "P2"))
         item = self.ProccessTable.horizontalHeaderItem(0)
         self.ProccessTable.setColumnWidth(0, 90)
         item.setText(_translate("MainWindow", "Name"))

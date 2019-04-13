@@ -196,3 +196,15 @@ class Scheduler:
             time = time + 1
 
         return occupied_slots
+    def average_TAT_WT(self, out, processList):
+        TAT_sum = 0
+        durations = 0
+        for process_index in range(len(processList)):
+            for out_index in range(len(out)):
+                if(processList[process_index].name == out[out_index]):
+                    TAT = out_index + 1 - processList[process_index].arrival_t
+            TAT_sum = TAT_sum + TAT
+            durations = durations + processList[process_index].duration
+            avg_TAT = TAT_sum/len(processList)
+            avg_WT = (TAT_sum-durations)/len(processList)
+        return avg_TAT, avg_WT
