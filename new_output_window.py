@@ -117,7 +117,7 @@ class Ui_OutputWindow(object):
         elif alg == "SJF" and not prefs["preemptive"]:
             out = Scheduler().SJF_nonPreemptive(pro_list)
         elif alg == "Round Robin":
-            out = Scheduler().roundRobin(pro_list, prefs["timeLabel"])
+            out = Scheduler().roundRobin(pro_list, prefs["time"])
 
         prev_tSlot = out[0]
         out_list = []
