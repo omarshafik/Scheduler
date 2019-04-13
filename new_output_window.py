@@ -9,33 +9,12 @@
 import sys
 import math
 import PyQt5
+import time
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtCore import Qt, QPropertyAnimation, pyqtProperty, QSequentialAnimationGroup
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QFrame
 from Scheduler import Scheduler
 from proccessClass import Proccess
-
-# proccess_list = {Proccess(0, 5, "U1", 5), Proccess(
-#     2, 4, "U2", 3), Proccess(5, 5, "U3", 1), Proccess(5, 1, "U4", 2)}
-# ProccessCount = 4
-
-# output = Scheduler().priority_nonpreemptive(proccess_list)
-
-# prevSlot = output[0]
-# output_list = []
-# duration = 0
-# for slot in output:
-#     if(slot != prevSlot):
-#         output_list.append({"Name": prevSlot, "duration": duration})
-#         duration = 0
-#     duration += 1
-#     prevSlot = slot
-# output_list.append({"Name": prevSlot, "duration": duration})
-
-# print(output)
-# print(output_list)
-
-# pref = {"algorithm": "preemptive", "ProccessNum": 2}
 
 
 class Ui_OutputWindow(object):
@@ -74,8 +53,6 @@ class Ui_OutputWindow(object):
             item = QtWidgets.QTableWidgetItem()
             self.ProccessTable.setVerticalHeaderItem(i, item)
             i = i + 1
-        #item = QtWidgets.QTableWidgetItem()
-        #self.ProccessTable.setVerticalHeaderItem(1, item)
         item = QtWidgets.QTableWidgetItem()
         self.ProccessTable.setHorizontalHeaderItem(0, item)
         item = QtWidgets.QTableWidgetItem()
@@ -86,12 +63,7 @@ class Ui_OutputWindow(object):
             item = QtWidgets.QTableWidgetItem()
             self.ProccessTable.setHorizontalHeaderItem(3, item)
         self.ProccessTable.horizontalHeader().setVisible(True)
-        self.Gantt = QtWidgets.QTableWidget(self.centralwidget)
-        self.Gantt.setGeometry(QtCore.QRect(35, 481, 741, 51))
-        self.Gantt.setObjectName("Gantt")
-        self.Gantt.setColumnCount(0)
-        self.Gantt.setRowCount(0)
-        self.Gantt.horizontalHeader().setHighlightSections(False)
+
         self.ShowHideBtn = QtWidgets.QDialogButtonBox(self.centralwidget)
         self.ShowHideBtn.setGeometry(QtCore.QRect(300, 340, 166, 25))
         self.ShowHideBtn.setStandardButtons(
@@ -109,14 +81,16 @@ class Ui_OutputWindow(object):
 
         self.retranslateUi(MainWindow, x)
 
-        self.Gantt.hide()
-        self.ShowHideBtn.accepted.connect(self.SetGantt)
+        self.group = QSequentialAnimationGroup()
+        self.GanttChart = []
+        self.times = []
+        self.anim = []
+
+        self.ShowHideBtn.accepted.connect(self.SetGanttSimulation)
         self.ShowHideBtn.rejected.connect(self.ResetGantt)
+        self.group.finished.connect(self.showTimeLabel)
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-        self.Gantt.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.Gantt.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def ReadProccessTable(self):
         prefs = self.prefs
@@ -143,7 +117,7 @@ class Ui_OutputWindow(object):
         elif alg == "SJF" and not prefs["preemptive"]:
             out = Scheduler().SJF_nonPreemptive(pro_list)
         elif alg == "Round Robin":
-            out = Scheduler().roundRobin(pro_list, prefs["time"])
+            out = Scheduler().roundRobin(pro_list, prefs["timeLabel"])
 
         prev_tSlot = out[0]
         out_list = []
@@ -160,30 +134,68 @@ class Ui_OutputWindow(object):
     def ResetGantt(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.AllEditTriggers)
-        self.Gantt.clear()
-        self.Gantt.hide()
+        self.group.clear()
+        self.anim.clear()
+        self.times.clear()
+        for i in range(len(self.GanttChart)):
+            self.GanttChart[i].clear()
+            self.GanttChart[i].hide()
+        self.GanttChart.clear()
 
-    def SetGantt(self):
+    def SetGanttSimulation(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
         output, output_list = self.ReadProccessTable()
-        self.Gantt.setColumnCount(len(output_list))
-        self.Gantt.setRowCount(2)
-        ganttWidth = self.Gantt.width()
-        slotWidth = math.ceil(ganttWidth / len(output))
+        GanttWidth = 700
+        Y = 450
+        X0 = 50
+        H = 40
+        stepWidth = GanttWidth / len(output)
         i = 0
-        self.Gantt.setFixedWidth(
-            math.ceil(slotWidth*len(output)))
-        self.Gantt.verticalHeader().hide()
-        self.Gantt.horizontalHeader().hide()
-        self.Gantt.setRowHeight(0, self.Gantt.height()/2 - 1)
-        self.Gantt.setRowHeight(1, self.Gantt.height()/2)
-        for item in output_list:
-            self.Gantt.setColumnWidth(i, slotWidth*item["duration"] - 4)
-            self.Gantt.setItem(0, i, QTableWidgetItem(item["Name"]))
-            self.Gantt.setItem(1, i, QTableWidgetItem(str(item["duration"])))
-            i += 1
-        self.Gantt.show()
+        Xi = X0
+        t = 0
+        styles = {}
+        for busrt in output_list:
+            label = QtWidgets.QLabel(self.centralwidget)
+            label.setGeometry(Xi, Y, 0, H)
+            if not busrt["Name"] in styles:
+                styles[busrt["Name"]] = "background-color: rgb("+str((120+i*50) %
+                                                                     256)+", "+str((90+i*70) % 256)+", "+str((220+i*40) % 256)+");"
+            label.setStyleSheet(styles[busrt["Name"]])
+            label.setObjectName("P"+str(i))
+            label.setText(busrt["Name"])
+            timeLabel = QtWidgets.QLabel(self.centralwidget)
+            timeLabel.setGeometry(Xi-5, Y+H, 10, 15)
+            timeLabel.setObjectName("T"+str(i+1))
+            timeLabel.setText(str(t))
+            self.GanttChart.append(label)
+            self.anim.append(QPropertyAnimation(
+                self.GanttChart[i], b"geometry"))
+            j = int(i/2)
+            self.anim[j].setDuration(1000*busrt["duration"])
+            self.anim[j].setStartValue(QtCore.QRect(Xi, Y, 0, H))
+            self.anim[j].setEndValue(QtCore.QRect(
+                Xi, Y, stepWidth*busrt["duration"], H))
+            self.group.addAnimation(self.anim[j])
+            self.GanttChart.append(timeLabel)
+            self.GanttChart[i].show()
+            Xi += stepWidth*busrt["duration"]
+            t += busrt["duration"]
+            i += 2
+
+        timeLabel = QtWidgets.QLabel(self.centralwidget)
+        timeLabel.setGeometry(Xi-5, Y+H, 10, 15)
+        timeLabel.setObjectName("T"+str(i+1))
+        timeLabel.setText(str(t))
+        i += 1
+        self.GanttChart.append(timeLabel)
+        self.group.start()
+
+    def showTimeLabel(self):
+        j = 0
+        while j < len(self.GanttChart):
+            self.GanttChart[j].show()
+            j += 1
 
     def retranslateUi(self, MainWindow, dict):
         _translate = QtCore.QCoreApplication.translate
@@ -194,8 +206,6 @@ class Ui_OutputWindow(object):
             item.setText(_translate("MainWindow", "P"+str(i)))
             self.ProccessTable.setRowHeight(i, 25)
             i = i + 1
-        #item = self.ProccessTable.verticalHeaderItem(1)
-        #item.setText(_translate("MainWindow", "P2"))
         item = self.ProccessTable.horizontalHeaderItem(0)
         self.ProccessTable.setColumnWidth(0, 90)
         item.setText(_translate("MainWindow", "Name"))
