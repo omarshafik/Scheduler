@@ -72,19 +72,6 @@
      </property>
     </column>
    </widget>
-   <widget class="QTableWidget" name="Gantt">
-    <property name="geometry">
-     <rect>
-      <x>35</x>
-      <y>481</y>
-      <width>741</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <attribute name="horizontalHeaderHighlightSections">
-     <bool>false</bool>
-    </attribute>
-   </widget>
    <widget class="QDialogButtonBox" name="ShowHideBtn">
     <property name="geometry">
      <rect>
@@ -96,6 +83,22 @@
     </property>
     <property name="standardButtons">
      <set>QDialogButtonBox::Ok|QDialogButtonBox::Reset</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>70</x>
+      <y>440</y>
+      <width>121</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(252, 233, 79);</string>
+    </property>
+    <property name="text">
+     <string>TextLabel</string>
     </property>
    </widget>
   </widget>
@@ -112,22 +115,5 @@
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
- <connections>
-  <connection>
-   <sender>ShowHideBtn</sender>
-   <signal>rejected()</signal>
-   <receiver>Gantt</receiver>
-   <slot>clear()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>434</x>
-     <y>379</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>392</x>
-     <y>513</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

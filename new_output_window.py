@@ -9,34 +9,13 @@
 import sys
 import math
 import PyQt5
+import time
 from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem
+from PyQt5.QtCore import Qt, QPropertyAnimation, pyqtProperty, QSequentialAnimationGroup
+from PyQt5.QtWidgets import QTableWidget, QTableWidgetItem, QFrame
 from Scheduler import Scheduler
 from proccessClass import Proccess
 from copy import deepcopy
-
-# proccess_list = {Proccess(0, 5, "U1", 5), Proccess(
-#     2, 4, "U2", 3), Proccess(5, 5, "U3", 1), Proccess(5, 1, "U4", 2)}
-# ProccessCount = 4
-
-# output = Scheduler().priority_nonpreemptive(proccess_list)
-
-# prevSlot = output[0]
-# output_list = []
-# duration = 0
-# for slot in output:
-#     if(slot != prevSlot):
-#         output_list.append({"Name": prevSlot, "duration": duration})
-#         duration = 0
-#     duration += 1
-#     prevSlot = slot
-# output_list.append({"Name": prevSlot, "duration": duration})
-
-# print(output)
-# print(output_list)
-
-# pref = {"algorithm": "preemptive", "ProccessNum": 2}
 
 
 class Ui_OutputWindow(object):
@@ -85,19 +64,13 @@ class Ui_OutputWindow(object):
             item = QtWidgets.QTableWidgetItem()
             self.ProccessTable.setHorizontalHeaderItem(3, item)
         self.ProccessTable.horizontalHeader().setVisible(True)
-        self.Gantt = QtWidgets.QTableWidget(self.centralwidget)
-        self.Gantt.setGeometry(QtCore.QRect(35, 481, 741, 51))
-        self.Gantt.setObjectName("Gantt")
-        self.Gantt.setColumnCount(0)
-        self.Gantt.setRowCount(0)
-        self.Gantt.horizontalHeader().setHighlightSections(False)
+
         self.ShowHideBtn = QtWidgets.QDialogButtonBox(self.centralwidget)
         self.ShowHideBtn.setGeometry(QtCore.QRect(300, 340, 166, 25))
         self.ShowHideBtn.setStandardButtons(
             QtWidgets.QDialogButtonBox.Cancel | QtWidgets.QDialogButtonBox.Ok)
 
         self.ShowHideBtn.setObjectName("ShowHideBtn")
-
 
         self.label = QtWidgets.QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(140, 380, 400, 25))
@@ -132,17 +105,19 @@ class Ui_OutputWindow(object):
 
         self.retranslateUi(MainWindow, x)
 
-        self.Gantt.hide()
+        self.group = QSequentialAnimationGroup()
+        self.GanttChart = []
+        self.times = []
+        self.anim = []
+
+        self.ShowHideBtn.accepted.connect(self.SetGanttSimulation)
         self.label.hide()
         self.label2.hide()
         self.error.hide()
-        self.ShowHideBtn.accepted.connect(self.SetGantt)
         self.ShowHideBtn.rejected.connect(self.ResetGantt)
+        self.group.finished.connect(self.showTimeLabel)
 
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-        self.Gantt.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.Gantt.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
     def ReadProccessTable(self):
         prefs = self.prefs
@@ -182,14 +157,14 @@ class Ui_OutputWindow(object):
             elif (priority <= 0):
                 error = name + " priority must be a postive integer"
                 break
-            else:#name and arrival_time >= 0 and duration > 0 and priority >= 0:
+            else:  # name and arrival_time >= 0 and duration > 0 and priority >= 0:
                 pro_list.append(
                     Proccess(int(arrival_time), int(duration), name, int(priority)))
         processes = []
         processes = deepcopy(pro_list)
         out = []
         out_list = []
-        #print(alg)
+        # print(alg)
         if(error == ""):
             if alg == "Priority" and prefs["preemptive"]:
                 out = Scheduler().priority_preemptive(pro_list)
@@ -213,18 +188,23 @@ class Ui_OutputWindow(object):
                 duration += 1
                 prev_tSlot = tSlot
             out_list.append({"Name": prev_tSlot, "duration": duration})
-        return out, out_list , processes , error
+        return out, out_list, processes, error
 
     def ResetGantt(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.AllEditTriggers)
-        self.Gantt.clear()
-        self.Gantt.hide()
+        self.group.clear()
+        self.anim.clear()
+        self.times.clear()
+        for i in range(len(self.GanttChart)):
+            self.GanttChart[i].clear()
+            self.GanttChart[i].hide()
+        self.GanttChart.clear()
         self.label.hide()
         self.label2.hide()
         self.error.hide()
 
-    def SetGantt(self):
+    def SetGanttSimulation(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
         output, output_list, pro_list, error = self.ReadProccessTable()
@@ -232,32 +212,69 @@ class Ui_OutputWindow(object):
             _translate = QtCore.QCoreApplication.translate
             self.error.setText(_translate("MainWindow", error))
             self.error.show()
-        else:
-            avg_TAT = 0
-            avg_WT = 0
-            avg_TAT, avg_WT= Scheduler().average_TAT_WT(output, pro_list)
-            self.Gantt.setColumnCount(len(output_list))
-            self.Gantt.setRowCount(2)
-            ganttWidth = self.Gantt.width()
-            slotWidth = math.ceil(ganttWidth / len(output))
-            i = 0
-            self.Gantt.setFixedWidth(
-                math.ceil(slotWidth*len(output)))
-            self.Gantt.verticalHeader().hide()
-            self.Gantt.horizontalHeader().hide()
-            self.Gantt.setRowHeight(0, self.Gantt.height()/2 - 1)
-            self.Gantt.setRowHeight(1, self.Gantt.height()/2)
-            for item in output_list:
-                self.Gantt.setColumnWidth(i, slotWidth*item["duration"] - 4)
-                self.Gantt.setItem(0, i, QTableWidgetItem(item["Name"]))
-                self.Gantt.setItem(1, i, QTableWidgetItem(str(item["duration"])))
-                i += 1
-            _translate = QtCore.QCoreApplication.translate
-            self.label.setText(_translate("MainWindow", " average waiting time = " + str(avg_WT)))
-            self.label2.setText(_translate("MainWindow", " average turn around time = " + str(avg_TAT)))
-            self.label.show()
-            self.label2.show()
-            self.Gantt.show()
+            return
+        avg_TAT = 0
+        avg_WT = 0
+        avg_TAT, avg_WT = Scheduler().average_TAT_WT(output, pro_list)
+        GanttWidth = 700
+        Y = 450
+        X0 = 50
+        H = 40
+        stepWidth = GanttWidth / len(output)
+        i = 0
+        Xi = X0
+        t = 0
+        styles = {}
+        for busrt in output_list:
+            label = QtWidgets.QLabel(self.centralwidget)
+            label.setGeometry(Xi, Y, 0, H)
+            if not busrt["Name"] in styles:
+                styles[busrt["Name"]] = "background-color: rgb("+str((120+i*50) %
+                                                                     256)+", "+str((90+i*70) % 256)+", "+str((220+i*40) % 256)+");"
+            label.setStyleSheet(styles[busrt["Name"]])
+            label.setObjectName("P"+str(i))
+            label.setText(busrt["Name"])
+            timeLabel = QtWidgets.QLabel(self.centralwidget)
+            timeLabel.setGeometry(Xi-stepWidth/2, Y+H, stepWidth, 15)
+            timeLabel.setAlignment(Qt.AlignCenter)
+            timeLabel.setObjectName("T"+str(i+1))
+            timeLabel.setText(str(t))
+            self.GanttChart.append(label)
+            self.anim.append(QPropertyAnimation(
+                self.GanttChart[i], b"geometry"))
+            j = int(i/2)
+            self.anim[j].setDuration(1000*busrt["duration"])
+            self.anim[j].setStartValue(QtCore.QRect(Xi, Y, 0, H))
+            self.anim[j].setEndValue(QtCore.QRect(
+                Xi, Y, stepWidth*busrt["duration"], H))
+            self.group.addAnimation(self.anim[j])
+            self.GanttChart.append(timeLabel)
+            self.GanttChart[i].show()
+            Xi += stepWidth*busrt["duration"]
+            t += busrt["duration"]
+            i += 2
+
+        timeLabel = QtWidgets.QLabel(self.centralwidget)
+        timeLabel.setGeometry(Xi-stepWidth/2, Y+H, stepWidth, 15)
+        timeLabel.setObjectName("T"+str(i+1))
+        timeLabel.setText(str(t))
+        timeLabel.setAlignment(Qt.AlignCenter)
+        i += 1
+        self.GanttChart.append(timeLabel)
+        _translate = QtCore.QCoreApplication.translate
+        self.label.setText(_translate(
+            "MainWindow", " average waiting time = " + str(avg_WT)))
+        self.label2.setText(_translate(
+            "MainWindow", " average turn around time = " + str(avg_TAT)))
+        self.label.show()
+        self.label2.show()
+        self.group.start()
+
+    def showTimeLabel(self):
+        j = 0
+        while j < len(self.GanttChart):
+            self.GanttChart[j].show()
+            j += 1
 
     def retranslateUi(self, MainWindow, dict):
         _translate = QtCore.QCoreApplication.translate

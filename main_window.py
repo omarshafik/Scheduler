@@ -95,8 +95,6 @@ class Ui_scheduler(object):
         self.lb_time.setText(_translate("scheduler", "Time slice"))
         self.toolBar.setWindowTitle(_translate("scheduler", "toolBar"))
         self.selected_scheduler.activated.connect(self.hide_show)
-        # self.no_process.valueChanged.connect(self.on_click)
-       # self.t_slice.valueChanged.connect(self.get_t_slice)
         self.go.clicked.connect(self.on_click)
         self.preemptive.hide()
         self.t_slice.hide()
@@ -107,19 +105,20 @@ class Ui_scheduler(object):
         return index
 
     def on_click(self):
-        process_no =  self.no_process.value()
+        process_no = self.no_process.value()
         time_slice = self.t_slice.value()
         scheduler = self.selected_scheduler.currentText()
         data = {"algorithm": scheduler, "Number": process_no,
-        "time": time_slice, "preemptive": self.preemptive.isChecked()}
+                "time": time_slice, "preemptive": self.preemptive.isChecked()}
         if(process_no == 0):
             _translate = QtCore.QCoreApplication.translate
-            #<font color='red'>text</font>
-            self.error.setText(_translate("scheduler", "<font color='red'>Number of processes must be greater than 0 </font>"))
+            self.error.setText(_translate(
+                "scheduler", "<font color='red'>Number of processes must be greater than 0 </font>"))
             self.error.show()
         elif(time_slice == 0 and scheduler == "Round Robin"):
             _translate = QtCore.QCoreApplication.translate
-            self.error.setText(_translate("scheduler", "<font color='red'> Time slice must be greater than 0 </font>"))
+            self.error.setText(_translate(
+                "scheduler", "<font color='red'> Time slice must be greater than 0 </font>"))
             self.error.show()
         else:
             self.error.hide()
