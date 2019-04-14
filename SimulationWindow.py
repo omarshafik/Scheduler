@@ -30,7 +30,7 @@ class TextLabel(QtWidgets.QLabel):
     txt = QtCore.pyqtProperty(str, fget=txt, fset=setTxt)
 
 
-class Ui_MainWindow(object):
+class Ui_LiveSimulation(object):
     def setupUi(self, MainWindow, prefs):
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(807, 598)
@@ -253,14 +253,3 @@ class Ui_MainWindow(object):
                 self.readyQueue[i+1].setStyleSheet(styles[burst["Name"]])
                 x += width
                 i += 2
-
-
-if __name__ == "__main__":
-    import sys
-    app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    prefs = {"algorithm": "SJF", "preemptive": True}
-    ui.setupUi(MainWindow, prefs)
-    MainWindow.show()
-    sys.exit(app.exec_())

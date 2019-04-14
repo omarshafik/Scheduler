@@ -1,6 +1,7 @@
 import PyQt5
 from PyQt5 import QtCore, QtGui, QtWidgets
 from new_output_window import Ui_OutputWindow
+from SimulationWindow import Ui_LiveSimulation
 
 
 class Ui_scheduler(object):
@@ -39,11 +40,15 @@ class Ui_scheduler(object):
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.go = QtWidgets.QPushButton(self.centralwidget)
-        self.go.setGeometry(QtCore.QRect(170, 210, 181, 27))
+        self.go.setGeometry(QtCore.QRect(160, 210, 90, 27))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.go.setFont(font)
         self.go.setObjectName("go")
+        self.goLive = QtWidgets.QPushButton(self.centralwidget)
+        self.goLive.setGeometry(QtCore.QRect(280, 210, 90, 27))
+        self.goLive.setFont(font)
+        self.goLive.setObjectName("goLive")
         self.lb_time = QtWidgets.QLabel(self.centralwidget)
         self.lb_time.setGeometry(QtCore.QRect(140, 160, 91, 41))
         font = QtGui.QFont()
@@ -75,6 +80,7 @@ class Ui_scheduler(object):
         self.toolBar.setObjectName("toolBar")
         scheduler.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
         self.error.hide()
+        self.goLive.clicked.connect(self.on_click_live)
 
         self.retranslateUi(scheduler)
         QtCore.QMetaObject.connectSlotsByName(scheduler)
@@ -91,7 +97,8 @@ class Ui_scheduler(object):
             3, _translate("scheduler", "Priority"))
         self.preemptive.setText(_translate("scheduler", "Preemptive"))
         self.label_2.setText(_translate("scheduler", "Number of process"))
-        self.go.setText(_translate("scheduler", "done"))
+        self.go.setText(_translate("scheduler", "Done"))
+        self.goLive.setText(_translate("scheduler", "Live"))
         self.lb_time.setText(_translate("scheduler", "Time slice"))
         self.toolBar.setWindowTitle(_translate("scheduler", "toolBar"))
         self.selected_scheduler.activated.connect(self.hide_show)
@@ -126,6 +133,24 @@ class Ui_scheduler(object):
             self.outui = Ui_OutputWindow(data)
             self.outui.setupUi(self.OutputWindow, data)
             self.OutputWindow.show()
+
+    def on_click_live(self):
+        time_slice = self.t_slice.value()
+        scheduler = self.selected_scheduler.currentText()
+        data = {"algorithm": scheduler,
+                "time": time_slice, "preemptive": self.preemptive.isChecked()}
+
+        if(time_slice == 0 and scheduler == "Round Robin"):
+            _translate = QtCore.QCoreApplication.translate
+            self.error.setText(_translate(
+                "scheduler", "<font color='red'> Time slice must be greater than 0 </font>"))
+            self.error.show()
+        else:
+            self.error.hide()
+            self.LiveSimulation = QtWidgets.QMainWindow()
+            self.outui = Ui_LiveSimulation()
+            self.outui.setupUi(self.LiveSimulation, data)
+            self.LiveSimulation.show()
 
     def hide_show(self):
         i = self.get_scheduler()
