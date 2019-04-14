@@ -170,7 +170,7 @@ class Ui_MainWindow(object):
                         Proccess(self.arrivalTime, duration, name, priority))
 
         self.setOutputs()
-        self.setReadyQueue()
+        # self.setReadyQueue()
         self.SetRunningLabel()
 
     def setOutputs(self):
@@ -203,6 +203,7 @@ class Ui_MainWindow(object):
     def SetRunningLabel(self):
 
         brk = False
+        self.setReadyQueue()
         for x in range(len(self.pro_list)):
             if self.pro_list[x].name == self.output[0]:
                 self.pro_list[x].duration -= 1
@@ -217,7 +218,6 @@ class Ui_MainWindow(object):
             self.timer.start(1000)
         else:
             self.runningLabel.setText("NOP")
-        self.setReadyQueue()
 
     def setReadyQueue(self):
 
