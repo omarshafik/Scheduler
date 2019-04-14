@@ -10,14 +10,14 @@ class Ui_scheduler(object):
         self.centralwidget = QtWidgets.QWidget(scheduler)
         self.centralwidget.setObjectName("centralwidget")
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(140, 20, 259, 41))
+        self.label.setGeometry(QtCore.QRect(140, 60, 259, 41))
         font = QtGui.QFont()
-        font.setPointSize(15)
+        font.setPointSize(13)
         font.setItalic(False)
         self.label.setFont(font)
         self.label.setObjectName("label")
         self.selected_scheduler = QtWidgets.QComboBox(self.centralwidget)
-        self.selected_scheduler.setGeometry(QtCore.QRect(140, 60, 259, 27))
+        self.selected_scheduler.setGeometry(QtCore.QRect(140, 100, 259, 27))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.selected_scheduler.setFont(font)
@@ -27,35 +27,44 @@ class Ui_scheduler(object):
         self.selected_scheduler.addItem("")
         self.selected_scheduler.addItem("")
         self.preemptive = QtWidgets.QCheckBox(self.centralwidget)
-        self.preemptive.setGeometry(QtCore.QRect(260, 30, 259, 26))
+        self.preemptive.setGeometry(QtCore.QRect(260, 70, 259, 26))
         font = QtGui.QFont()
         font.setPointSize(13)
         self.preemptive.setFont(font)
         self.preemptive.setObjectName("preemptive")
         self.label_2 = QtWidgets.QLabel(self.centralwidget)
-        self.label_2.setGeometry(QtCore.QRect(140, 90, 173, 41))
+        self.label_2.setGeometry(QtCore.QRect(140, 130, 173, 41))
         font = QtGui.QFont()
-        font.setPointSize(15)
+        font.setPointSize(13)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
         self.go = QtWidgets.QPushButton(self.centralwidget)
-        self.go.setGeometry(QtCore.QRect(170, 170, 181, 27))
+        self.go.setGeometry(QtCore.QRect(170, 210, 181, 27))
         font = QtGui.QFont()
         font.setPointSize(12)
         self.go.setFont(font)
         self.go.setObjectName("go")
         self.lb_time = QtWidgets.QLabel(self.centralwidget)
-        self.lb_time.setGeometry(QtCore.QRect(140, 120, 91, 41))
+        self.lb_time.setGeometry(QtCore.QRect(140, 160, 91, 41))
         font = QtGui.QFont()
-        font.setPointSize(15)
+        font.setPointSize(13)
         self.lb_time.setFont(font)
         self.lb_time.setObjectName("lb_time")
         self.no_process = QtWidgets.QSpinBox(self.centralwidget)
-        self.no_process.setGeometry(QtCore.QRect(320, 100, 48, 26))
+        self.no_process.setGeometry(QtCore.QRect(320, 140, 48, 26))
         self.no_process.setObjectName("no_process")
         self.t_slice = QtWidgets.QSpinBox(self.centralwidget)
-        self.t_slice.setGeometry(QtCore.QRect(320, 130, 48, 26))
+        self.t_slice.setGeometry(QtCore.QRect(320, 170, 48, 26))
         self.t_slice.setObjectName("t_slice")
+
+        self.error = QtWidgets.QLabel(self.centralwidget)
+        self.error.setGeometry(QtCore.QRect(110, 30, 440, 30))
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setItalic(False)
+        self.error.setFont(font)
+        self.error.setObjectName("error")
+
         scheduler.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(scheduler)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 540, 22))
@@ -64,6 +73,7 @@ class Ui_scheduler(object):
         self.toolBar = QtWidgets.QToolBar(scheduler)
         self.toolBar.setObjectName("toolBar")
         scheduler.addToolBar(QtCore.Qt.TopToolBarArea, self.toolBar)
+        self.error.hide()
 
         self.retranslateUi(scheduler)
         QtCore.QMetaObject.connectSlotsByName(scheduler)
@@ -84,8 +94,6 @@ class Ui_scheduler(object):
         self.lb_time.setText(_translate("scheduler", "Time slice"))
         self.toolBar.setWindowTitle(_translate("scheduler", "toolBar"))
         self.selected_scheduler.activated.connect(self.hide_show)
-        # self.no_process.valueChanged.connect(self.on_click)
-       # self.t_slice.valueChanged.connect(self.get_t_slice)
         self.go.clicked.connect(self.on_click)
         self.preemptive.hide()
         self.t_slice.hide()
@@ -96,12 +104,27 @@ class Ui_scheduler(object):
         return index
 
     def on_click(self):
-        data = {"algorithm": self.selected_scheduler.currentText(), "Number": self.no_process.value(
-        ), "time": self.t_slice.value(), "preemptive": self.preemptive.isChecked()}
-        self.OutputWindow = QtWidgets.QMainWindow()
-        self.outui = Ui_OutputWindow(data)
-        self.outui.setupUi(self.OutputWindow, data)
-        self.OutputWindow.show()
+        process_no = self.no_process.value()
+        time_slice = self.t_slice.value()
+        scheduler = self.selected_scheduler.currentText()
+        data = {"algorithm": scheduler, "Number": process_no,
+                "time": time_slice, "preemptive": self.preemptive.isChecked()}
+        if(process_no == 0):
+            _translate = QtCore.QCoreApplication.translate
+            self.error.setText(_translate(
+                "scheduler", "<font color='red'>Number of processes must be greater than 0 </font>"))
+            self.error.show()
+        elif(time_slice == 0 and scheduler == "Round Robin"):
+            _translate = QtCore.QCoreApplication.translate
+            self.error.setText(_translate(
+                "scheduler", "<font color='red'> Time slice must be greater than 0 </font>"))
+            self.error.show()
+        else:
+            self.error.hide()
+            self.OutputWindow = QtWidgets.QMainWindow()
+            self.outui = Ui_OutputWindow(data)
+            self.outui.setupUi(self.OutputWindow, data)
+            self.OutputWindow.show()
 
     def hide_show(self):
         i = self.get_scheduler()
