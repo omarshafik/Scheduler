@@ -196,6 +196,33 @@ class Scheduler:
             time = time + 1
 
         return occupied_slots
+    
+    def FCFS (self,ProccessList):
+        time =0
+        count=0
+        last_time = -1
+        out=[]
+        Q = []
+        while (1):
+            for index in range(len(ProccessList)):
+                if(ProccessList[index].arrival_t <= time and ProccessList[index].arrival_t > last_time):
+                    Q.append(ProccessList[index])
+                    count =count+1
+            last_time=time
+            Q.sort(key=lambda x: x.arrival_t)
+            if (len(Q)>0):
+                while(Q[0].duration > 0):
+                    time = time + 1
+                    Q[0].duration = Q[0].duration - 1
+                    out.append(Q[0].name)
+                del Q[0]
+            else:
+                time=time+1
+                out.append("NOP")
+            if(len(Q) == 0 and len(ProccessList) == count):
+                break
+        return out
+
     def average_TAT_WT(self, out, processList):
         TAT_sum = 0
         durations = 0

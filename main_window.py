@@ -52,6 +52,7 @@ class Ui_scheduler(object):
         self.lb_time.setObjectName("lb_time")
         self.no_process = QtWidgets.QSpinBox(self.centralwidget)
         self.no_process.setGeometry(QtCore.QRect(320, 140, 48, 26))
+        self.no_process.setMaximum(100000)
         self.no_process.setObjectName("no_process")
         self.t_slice = QtWidgets.QSpinBox(self.centralwidget)
         self.t_slice.setGeometry(QtCore.QRect(320, 170, 48, 26))

@@ -189,6 +189,7 @@ class Ui_OutputWindow(object):
         processes = deepcopy(pro_list)
         out = []
         out_list = []
+        #print(alg)
         if(error == ""):
             if alg == "Priority" and prefs["preemptive"]:
                 out = Scheduler().priority_preemptive(pro_list)
@@ -200,6 +201,8 @@ class Ui_OutputWindow(object):
                 out = Scheduler().SJF_nonPreemptive(pro_list)
             elif alg == "Round Robin":
                 out = Scheduler().roundRobin(pro_list, prefs["time"])
+            elif alg == "FCFS":
+                out = Scheduler().FCFS(pro_list)
 
             prev_tSlot = out[0]
             duration = 0
