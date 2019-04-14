@@ -112,6 +112,14 @@ class Ui_OutputWindow(object):
         self.label2.setFont(font)
         self.label2.setObjectName("label2")
 
+        self.error = QtWidgets.QLabel(self.centralwidget)
+        self.error.setGeometry(QtCore.QRect(185, 105, 440, 30))
+        font = QtGui.QFont()
+        font.setPointSize(13)
+        font.setItalic(False)
+        self.error.setFont(font)
+        self.error.setStyleSheet("color: red")
+        self.error.setObjectName("error")
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -127,6 +135,7 @@ class Ui_OutputWindow(object):
         self.Gantt.hide()
         self.label.hide()
         self.label2.hide()
+        self.error.hide()
         self.ShowHideBtn.accepted.connect(self.SetGantt)
         self.ShowHideBtn.rejected.connect(self.ResetGantt)
 
@@ -140,40 +149,68 @@ class Ui_OutputWindow(object):
         count = prefs["Number"]
         alg = prefs["algorithm"]
         pro_list = []
+        error = ""
         for row in range(count):
             name = str(self.ProccessTable.item(row, 0).text())
-            arrival_time = int(self.ProccessTable.item(row, 1).text())
-            duration = int(self.ProccessTable.item(row, 2).text())
-            priority = 1
+            if(name == ""):
+                error = "Process name is required"
+                break
+            arrival_time = self.ProccessTable.item(row, 1).text()
+            duration = self.ProccessTable.item(row, 2).text()
+            priority = "1"
             if(alg == "Priority"):
-                priority = int(self.ProccessTable.item(row, 3).text())
-            if name and arrival_time >= 0 and duration > 0 and priority >= 0:
+                priority = self.ProccessTable.item(row, 3).text()
+            if(not arrival_time.isdigit()):
+                error = name + " arrival time must be >= 0"
+                break
+            elif(not duration.isdigit()):
+                error = name + " duration must be a postive integer"
+                break
+            elif(not priority.isdigit()):
+                error = name + " priority must be a postive integer"
+                break
+            else:
+                arrival_time = int(arrival_time)
+                duration = int(duration)
+                priority = int(priority)
+            if(arrival_time < 0):
+                error = name + " arrival time must be >= 0"
+                break
+            elif (duration <= 0):
+                error = name + " duration must be a postive integer"
+                break
+            elif (priority <= 0):
+                error = name + " priority must be a postive integer"
+                break
+            else:#name and arrival_time >= 0 and duration > 0 and priority >= 0:
                 pro_list.append(
-                    Proccess(arrival_time, duration, name, priority))
+                    Proccess(int(arrival_time), int(duration), name, int(priority)))
         processes = []
         processes = deepcopy(pro_list)
-        if alg == "Priority" and prefs["preemptive"]:
-            out = Scheduler().priority_preemptive(pro_list)
-        elif alg == "Priority" and not prefs["preemptive"]:
-            out = Scheduler().priority_nonpreemptive(pro_list)
-        elif alg == "SJF" and prefs["preemptive"]:
-            out = Scheduler().SJF_Preemptive(pro_list)
-        elif alg == "SJF" and not prefs["preemptive"]:
-            out = Scheduler().SJF_nonPreemptive(pro_list)
-        elif alg == "Round Robin":
-            out = Scheduler().roundRobin(pro_list, prefs["time"])
-
-        prev_tSlot = out[0]
+        out = []
         out_list = []
-        duration = 0
-        for tSlot in out:
-            if(tSlot != prev_tSlot):
-                out_list.append({"Name": prev_tSlot, "duration": duration})
-                duration = 0
-            duration += 1
-            prev_tSlot = tSlot
-        out_list.append({"Name": prev_tSlot, "duration": duration})
-        return out, out_list , processes
+        if(error == ""):
+            if alg == "Priority" and prefs["preemptive"]:
+                out = Scheduler().priority_preemptive(pro_list)
+            elif alg == "Priority" and not prefs["preemptive"]:
+                out = Scheduler().priority_nonpreemptive(pro_list)
+            elif alg == "SJF" and prefs["preemptive"]:
+                out = Scheduler().SJF_Preemptive(pro_list)
+            elif alg == "SJF" and not prefs["preemptive"]:
+                out = Scheduler().SJF_nonPreemptive(pro_list)
+            elif alg == "Round Robin":
+                out = Scheduler().roundRobin(pro_list, prefs["time"])
+
+            prev_tSlot = out[0]
+            duration = 0
+            for tSlot in out:
+                if(tSlot != prev_tSlot):
+                    out_list.append({"Name": prev_tSlot, "duration": duration})
+                    duration = 0
+                duration += 1
+                prev_tSlot = tSlot
+            out_list.append({"Name": prev_tSlot, "duration": duration})
+        return out, out_list , processes , error
 
     def ResetGantt(self):
         self.ProccessTable.setEditTriggers(
@@ -182,36 +219,42 @@ class Ui_OutputWindow(object):
         self.Gantt.hide()
         self.label.hide()
         self.label2.hide()
+        self.error.hide()
 
     def SetGantt(self):
         self.ProccessTable.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
-        output, output_list, pro_list = self.ReadProccessTable()
-        avg_TAT = 0
-        avg_WT = 0
-        avg_TAT, avg_WT= Scheduler().average_TAT_WT(output, pro_list)
-        self.Gantt.setColumnCount(len(output_list))
-        self.Gantt.setRowCount(2)
-        ganttWidth = self.Gantt.width()
-        slotWidth = math.ceil(ganttWidth / len(output))
-        i = 0
-        self.Gantt.setFixedWidth(
-            math.ceil(slotWidth*len(output)))
-        self.Gantt.verticalHeader().hide()
-        self.Gantt.horizontalHeader().hide()
-        self.Gantt.setRowHeight(0, self.Gantt.height()/2 - 1)
-        self.Gantt.setRowHeight(1, self.Gantt.height()/2)
-        for item in output_list:
-            self.Gantt.setColumnWidth(i, slotWidth*item["duration"] - 4)
-            self.Gantt.setItem(0, i, QTableWidgetItem(item["Name"]))
-            self.Gantt.setItem(1, i, QTableWidgetItem(str(item["duration"])))
-            i += 1
-        _translate = QtCore.QCoreApplication.translate
-        self.label.setText(_translate("MainWindow", " average waiting time = " + str(avg_WT)))
-        self.label2.setText(_translate("MainWindow", " average turn around time = " + str(avg_TAT)))
-        self.label.show()
-        self.label2.show()
-        self.Gantt.show()
+        output, output_list, pro_list, error = self.ReadProccessTable()
+        if(error != ""):
+            _translate = QtCore.QCoreApplication.translate
+            self.error.setText(_translate("MainWindow", error))
+            self.error.show()
+        else:
+            avg_TAT = 0
+            avg_WT = 0
+            avg_TAT, avg_WT= Scheduler().average_TAT_WT(output, pro_list)
+            self.Gantt.setColumnCount(len(output_list))
+            self.Gantt.setRowCount(2)
+            ganttWidth = self.Gantt.width()
+            slotWidth = math.ceil(ganttWidth / len(output))
+            i = 0
+            self.Gantt.setFixedWidth(
+                math.ceil(slotWidth*len(output)))
+            self.Gantt.verticalHeader().hide()
+            self.Gantt.horizontalHeader().hide()
+            self.Gantt.setRowHeight(0, self.Gantt.height()/2 - 1)
+            self.Gantt.setRowHeight(1, self.Gantt.height()/2)
+            for item in output_list:
+                self.Gantt.setColumnWidth(i, slotWidth*item["duration"] - 4)
+                self.Gantt.setItem(0, i, QTableWidgetItem(item["Name"]))
+                self.Gantt.setItem(1, i, QTableWidgetItem(str(item["duration"])))
+                i += 1
+            _translate = QtCore.QCoreApplication.translate
+            self.label.setText(_translate("MainWindow", " average waiting time = " + str(avg_WT)))
+            self.label2.setText(_translate("MainWindow", " average turn around time = " + str(avg_TAT)))
+            self.label.show()
+            self.label2.show()
+            self.Gantt.show()
 
     def retranslateUi(self, MainWindow, dict):
         _translate = QtCore.QCoreApplication.translate
