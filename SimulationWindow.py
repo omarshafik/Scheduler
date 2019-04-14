@@ -100,11 +100,13 @@ class Ui_LiveSimulation(object):
 
         self.algorithm = prefs["algorithm"]
         self.cnt = 2
+        self.preemptive = False
         if self.algorithm == "Priority" or self.algorithm == "SJF":
             self.preemptive = prefs["preemptive"]
         if self.algorithm == "Priority":
             self.cnt = 3
         if self.algorithm == "Round Robin":
+            # self.preemptive = True
             self.quatum = prefs["time"]
         self.ProcessTable.setColumnCount(self.cnt)
         self.runningLabel.setStyleSheet("color: rgb(0, 0 , 0);\n"
@@ -162,16 +164,20 @@ class Ui_LiveSimulation(object):
                 priority = int(self.ProcessTable.item(row, 2).text())
             if name and duration > 0 and priority >= 0:
                 for x in range(len(self.pro_list)):
-                    if self.pro_list[x].name == name:
+                    if self.pro_list[x].name == name and\
+                            (self.output[0] != name or self.pro_list[x].priority > priority):
                         self.pro_list[x].duration += duration
                         break
                 else:
                     self.pro_list.append(
                         Proccess(self.arrivalTime, duration, name, priority))
+        if not self.preemptive:
+            self.arrivalTime += 1
 
         self.setOutputs()
-        # self.setReadyQueue()
-        self.SetRunningLabel()
+        if not self.timer.isActive():
+            self.setReadyQueue()
+            self.SetRunningLabel()
 
     def setOutputs(self):
         self.output.clear()
@@ -192,29 +198,43 @@ class Ui_LiveSimulation(object):
             prev_tSlot = self.output[0]
             duration = 0
             for tSlot in self.output:
-                if(tSlot != prev_tSlot):
+                if tSlot != prev_tSlot:
                     self.output_list.append(
                         {"Name": prev_tSlot, "duration": duration})
                     duration = 0
-                duration += 1
-                prev_tSlot = tSlot
-            self.output_list.append({"Name": prev_tSlot, "duration": duration})
+                if tSlot != "NOP":
+                    duration += 1
+                    prev_tSlot = tSlot
+            if prev_tSlot != "NOP":
+                self.output_list.append(
+                    {"Name": prev_tSlot, "duration": duration})
 
     def SetRunningLabel(self):
 
         brk = False
-        self.setReadyQueue()
         for x in range(len(self.pro_list)):
+            if self.output_list[0]["Name"] == "NOP":
+                self.output_list.remove(self.output_list[0])
+            while self.output[0] == "NOP":
+                self.output.remove(self.output[0])
             if self.pro_list[x].name == self.output[0]:
                 self.pro_list[x].duration -= 1
                 if self.pro_list[x].duration == 0:
                     self.pro_list.remove(self.pro_list[x])
                 brk = True
                 break
+        self.setReadyQueue()
         if brk:
-            self.runningLabel.setText(
-                self.output[0]+"\n"+str(self.output_list[0]["duration"]))
-            self.setOutputs()
+            if self.preemptive == True:
+                self.runningLabel.setText(
+                    self.output[0]+"\n"+str(self.output_list[0]["duration"]))
+                self.setOutputs()
+            else:
+                self.runningLabel.setText(
+                    self.output[0]+"\n"+str(self.output_list[0]["duration"]))
+                self.output_list[0]["duration"] -= 1
+                if self.output_list[0]["duration"] < 1:
+                    self.setOutputs()
             self.timer.start(1000)
         else:
             self.runningLabel.setText("NOP")
@@ -229,8 +249,14 @@ class Ui_LiveSimulation(object):
             self.readyQueue[i].hide()
         self.readyQueue.clear()
         i = 0
+        j = 0
         for burst in self.output_list:
-            if burst == self.output_list[0]:
+            u = int(i/2)
+            if self.output_list[(u)]["duration"] == 0:
+                self.output_list.remove(self.output_list[u])
+                continue
+            if j == 0:
+                j += 1
                 continue
             if len(self.output_list) > 1:
                 width = 450/(len(self.output_list)-1)

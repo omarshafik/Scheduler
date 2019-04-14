@@ -87,7 +87,6 @@ class Scheduler:
                     i = i + 1
                     # print(current_process.duration)
                     if(current_process.duration == 0):
-                        print(current_process.name, i)
                         break
             else:
                 out.append("NOP")

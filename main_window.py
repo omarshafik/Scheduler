@@ -145,6 +145,7 @@ class Ui_scheduler(object):
             self.error.setText(_translate(
                 "scheduler", "<font color='red'> Time slice must be greater than 0 </font>"))
             self.error.show()
+        # elif not scheduler == "Round Robin":
         else:
             self.error.hide()
             self.LiveSimulation = QtWidgets.QMainWindow()
