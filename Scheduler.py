@@ -1,5 +1,6 @@
 from proccessClass import Proccess
 import queue
+import copy
 
 
 class Scheduler:
@@ -106,7 +107,7 @@ class Scheduler:
 
     def priority_preemptive(self, proccess_list):
         noop = True
-        p_arrival = sorted(proccess_list, key=lambda x: x.arrival_t)
+        p_arrival = copy.copy(sorted(proccess_list, key=lambda x: x.arrival_t))
         ready_queue = []
         running = False     # running proccess
         occupied_slots = []
@@ -119,7 +120,7 @@ class Scheduler:
                 ready_queue.sort(key=lambda x: x.priority)
 
             if ready_queue and not running:
-                running = ready_queue[0]
+                running = copy.copy(ready_queue[0])
                 del ready_queue[0]
                 noop = False
 
@@ -130,7 +131,7 @@ class Scheduler:
 
                 if running.duration <= 0:
                     if ready_queue:
-                        running = ready_queue[0]
+                        running = copy.copy(ready_queue[0])
                         del ready_queue[0]
                     else:
                         running = False
@@ -138,7 +139,7 @@ class Scheduler:
 
                 elif ready_queue and ready_queue[0].priority < running.priority:
                     ready_queue.append(running)
-                    running = ready_queue[0]
+                    running = copy.copy(ready_queue[0])
                     del ready_queue[0]
                     if ready_queue:
                         ready_queue.sort(key=lambda x: x.priority)
