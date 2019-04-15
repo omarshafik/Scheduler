@@ -225,6 +225,7 @@ class Ui_OutputWindow(object):
         Xi = X0
         t = 0
         styles = {}
+        simTimeStep = 5000/len(output)
         for busrt in output_list:
             label = QtWidgets.QLabel(self.centralwidget)
             label.setGeometry(Xi, Y, 0, H)
@@ -243,7 +244,7 @@ class Ui_OutputWindow(object):
             self.anim.append(QPropertyAnimation(
                 self.GanttChart[i], b"geometry"))
             j = int(i/2)
-            self.anim[j].setDuration(1000*busrt["duration"])
+            self.anim[j].setDuration(simTimeStep*busrt["duration"])
             self.anim[j].setStartValue(QtCore.QRect(Xi, Y, 0, H))
             self.anim[j].setEndValue(QtCore.QRect(
                 Xi, Y, stepWidth*busrt["duration"], H))
