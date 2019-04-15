@@ -165,7 +165,7 @@ class Ui_LiveSimulation(object):
             if name and duration > 0 and priority >= 0:
                 for x in range(len(self.pro_list)):
                     if self.pro_list[x].name == name and\
-                            (self.output[0] != name or self.pro_list[x].priority > priority):
+                            (self.output[0] != name or self.pro_list[x].priority > priority or (self.preemptive and self.algorithm == "SJF")):
                         self.pro_list[x].duration += duration
                         break
                 else:
