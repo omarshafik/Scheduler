@@ -226,6 +226,8 @@ class Ui_OutputWindow(object):
         t = 0
         styles = {}
         simTimeStep = 5000/len(output)
+        font = QtGui.QFont()
+        font.setPointSize(7)
         for busrt in output_list:
             label = QtWidgets.QLabel(self.centralwidget)
             label.setGeometry(Xi, Y, 0, H)
@@ -240,6 +242,7 @@ class Ui_OutputWindow(object):
             timeLabel.setAlignment(Qt.AlignCenter)
             timeLabel.setObjectName("T"+str(i+1))
             timeLabel.setText(str(t))
+            timeLabel.setFont(font)
             self.GanttChart.append(label)
             self.anim.append(QPropertyAnimation(
                 self.GanttChart[i], b"geometry"))
@@ -250,6 +253,7 @@ class Ui_OutputWindow(object):
                 Xi, Y, stepWidth*busrt["duration"], H))
             self.group.addAnimation(self.anim[j])
             self.GanttChart.append(timeLabel)
+            self.GanttChart[i].setAlignment(Qt.AlignCenter)
             self.GanttChart[i].show()
             Xi += stepWidth*busrt["duration"]
             t += busrt["duration"]
@@ -259,9 +263,11 @@ class Ui_OutputWindow(object):
         timeLabel.setGeometry(Xi-stepWidth/2, Y+H, stepWidth, 15)
         timeLabel.setObjectName("T"+str(i+1))
         timeLabel.setText(str(t))
+        timeLabel.setFont(font)
         timeLabel.setAlignment(Qt.AlignCenter)
         i += 1
         self.GanttChart.append(timeLabel)
+        self.GanttChart[i-1].setAlignment(Qt.AlignCenter)
         _translate = QtCore.QCoreApplication.translate
         self.label.setText(_translate(
             "MainWindow", " average waiting time = " + str(avg_WT)))
