@@ -228,6 +228,8 @@ class Ui_OutputWindow(object):
         simTimeStep = 5000/len(output)
         font = QtGui.QFont()
         font.setPointSize(7)
+        font1 = QtGui.QFont()
+        font1.setPointSize(8)
         for busrt in output_list:
             label = QtWidgets.QLabel(self.centralwidget)
             label.setGeometry(Xi, Y, 0, H)
@@ -236,9 +238,10 @@ class Ui_OutputWindow(object):
                                                                      256)+", "+str((90+i*70) % 256)+", "+str((220+i*40) % 256)+");"
             label.setStyleSheet(styles[busrt["Name"]])
             label.setObjectName("P"+str(i))
-            label.setText(busrt["Name"])
+            label.setText(busrt["Name"]+"\n"+str(busrt["duration"]))
+            label.setFont(font1)
             timeLabel = QtWidgets.QLabel(self.centralwidget)
-            timeLabel.setGeometry(Xi-stepWidth/2, Y+H, stepWidth, 15)
+            timeLabel.setGeometry(Xi-Xi/2, Y+H, Xi, 15)
             timeLabel.setAlignment(Qt.AlignCenter)
             timeLabel.setObjectName("T"+str(i+1))
             timeLabel.setText(str(t))
@@ -260,7 +263,7 @@ class Ui_OutputWindow(object):
             i += 2
 
         timeLabel = QtWidgets.QLabel(self.centralwidget)
-        timeLabel.setGeometry(Xi-stepWidth/2, Y+H, stepWidth, 15)
+        timeLabel.setGeometry(Xi-Xi/2, Y+H, Xi, 15)
         timeLabel.setObjectName("T"+str(i+1))
         timeLabel.setText(str(t))
         timeLabel.setFont(font)
